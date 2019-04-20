@@ -102,21 +102,27 @@ private static Log _log = LogFactoryUtil.getLog(RecomendacionPortlet.class);
 			String recomendacion="";
 			try {
 				recomendacion= (String) PortalUtil.getUser(renderRequest).getExpandoBridge().getAttribute("recomendacion");
+			
+				PortletSession portletSession = renderRequest.getPortletSession();
+				ClasificacionGrupo clasificacionGrupo=(ClasificacionGrupo) portletSession.getAttribute("clasificacionGrupoInvestigacion",PortletSession.APPLICATION_SCOPE);
+				if(recomendacion.equals("")){
+					_log.info("including default "+viewTemplate);
+					_log.info(clasificacionGrupo.getClasificacionGrupo()+" "+(String) PortalUtil.getUser(renderRequest).getExpandoBridge().getAttribute("clasificacionObjetivo"));
+					if(clasificacionGrupo.getClasificacionGrupo().equals((String) PortalUtil.getUser(renderRequest).getExpandoBridge().getAttribute("clasificacionObjetivo"))){
+						_log.info("enviando mensaje");
+						renderRequest.setAttribute("mensajeRecomendacion", true);
+					}
+					include(viewTemplate, renderRequest, renderResponse);
+				}else{
+					GrupoInvestigacionFacade facade = new GrupoInvestigacionFacade();
+					String tiposProductos=facade.consultarTiposProductosInvestigacion();
+			    	renderRequest.setAttribute("productosGrupo", clasificacionGrupo.getProductos());
+			    	renderRequest.setAttribute("tiposProductos", tiposProductos);
+					renderRequest.setAttribute("recomendacion", recomendacion);
+					include("/html/recomendacion/detalle_recomendacion.jsp", renderRequest, renderResponse);
+				}
 			} catch (PortalException | SystemException e) {
 				e.printStackTrace();
-			}
-			if(recomendacion.equals("")){
-				_log.info("including default "+viewTemplate);
-				include(viewTemplate, renderRequest, renderResponse);
-			}else{
-				GrupoInvestigacionFacade facade = new GrupoInvestigacionFacade();
-				String tiposProductos=facade.consultarTiposProductosInvestigacion();
-				PortletSession portletSession = renderRequest.getPortletSession();
-		    	ClasificacionGrupo clasificacionGrupo=(ClasificacionGrupo) portletSession.getAttribute("clasificacionGrupoInvestigacion",PortletSession.APPLICATION_SCOPE);
-		    	renderRequest.setAttribute("productosGrupo", clasificacionGrupo.getProductos());
-		    	renderRequest.setAttribute("tiposProductos", tiposProductos);
-				renderRequest.setAttribute("recomendacion", recomendacion);
-				include("/html/recomendacion/detalle_recomendacion.jsp", renderRequest, renderResponse);
 			}
 		}
 	}

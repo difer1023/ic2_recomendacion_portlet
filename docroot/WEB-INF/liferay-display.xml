@@ -4,5 +4,6 @@
 <display>
 	<category name="category.sample">
 		<portlet id="ic2-recomendacion" />
+		<portlet id="ic2-recomendacion-inicio" />
 	</category>
 </display>
