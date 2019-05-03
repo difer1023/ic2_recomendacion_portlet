@@ -7,7 +7,7 @@ System.out.println("mensaje"+ mensajeRecomendacion);
 <%if(mensajeRecomendacion!=null){ %>
 <div class="container">
 	<!-- Modal -->
-	<div class="modal fade" id="modalRecomendacion" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+	<div class="modal bsModal fade" id="modalRecomendacion" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
 	  <div class="modal-dialog" role="document">
 	    <div class="modal-content">
 	      <div class="modal-body">

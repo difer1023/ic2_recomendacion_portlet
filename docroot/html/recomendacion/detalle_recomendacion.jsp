@@ -17,7 +17,7 @@
  <div class="col-md-12">
       <div class="box box-solid">
         <div class="box-header with-border">
-          <p>Estos son los productos que te recomendamos realizar para alcanzar a categoria deseada.</p>
+          <p>Estos son los productos que te recomendamos realizar para alcanzar a categoría deseada.</p>
         </div>
         <!-- /.box-header -->
         <div class="box-body">

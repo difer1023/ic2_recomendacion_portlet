@@ -14,7 +14,7 @@ import javax.portlet.RenderResponse;
 import javax.servlet.http.HttpServletRequest;
 
 import co.com.ic2.colciencias.gruplac.ClasificacionGrupo;
-import co.com.ic2.colciencias.utilidades.properties.ParametrosProperties;
+import co.com.ic2.colciencias.utilidades.usuario.UsuarioUtil;
 import co.com.ic2.facade.GrupoInvestigacionFacade;
 import co.com.ic2.facade.RecomendacionFacade;
 
@@ -28,7 +28,7 @@ import com.liferay.portal.util.PortalUtil;
 
 public class RecomendacionPortlet extends GenericPortlet{
 
-private static Log _log = LogFactoryUtil.getLog(RecomendacionPortlet.class);
+private static Log LOG = LogFactoryUtil.getLog(RecomendacionPortlet.class);
 	
 	public void init() {
 		viewTemplate = getInitParameter("view-template");
@@ -37,24 +37,22 @@ private static Log _log = LogFactoryUtil.getLog(RecomendacionPortlet.class);
 	@ProcessAction(name = "solicitudRecomendacion")
 	public void solicitudRecomendacion(ActionRequest actionRequest,
 			ActionResponse actionResponse) throws IOException, PortletException {
-		System.out.println("processAction");
+		LOG.info("processAction solicitudRecomendacion");
 		User user = null;
 		try {
 			user = PortalUtil.getUser(actionRequest);
 		
-		ParametrosProperties.getInstance().limpiarParametros();
+//		ParametrosProperties.getInstance().limpiarParametros();
 		PortletSession portletSession = actionRequest.getPortletSession();
 		ClasificacionGrupo clasificacionGrupo=(ClasificacionGrupo) portletSession.getAttribute("clasificacionGrupoInvestigacion",PortletSession.APPLICATION_SCOPE);
-//    	_log.info(usuario);
-    	System.out.println(clasificacionGrupo.getProductos());
-//    	ClasificacionGrupo clasificacionGrupo=usuario.getClasificacionGrupo();
-    	System.out.println(clasificacionGrupo.getClasificacionGrupo());
-		System.out.println(user.getExpandoBridge().getAttribute("clasificacionObjetivo"));
-    	RecomendacionFacade recomendacionFacade=new RecomendacionFacade();
-
+    	
+		RecomendacionFacade recomendacionFacade=new RecomendacionFacade();
+		LOG.info("INFO RECOMENDACION "+ clasificacionGrupo.getProductos()+" "+clasificacionGrupo.getClasificacionGrupo()+" "+(String)user.getExpandoBridge().getAttribute("clasificacionObjetivo"));
     	String recomendacion=recomendacionFacade.ejecutarRecomendacion(clasificacionGrupo.getProductos(), clasificacionGrupo.getClasificacionGrupo(), (String)user.getExpandoBridge().getAttribute("clasificacionObjetivo"));
     	
     	user.getExpandoBridge().setAttribute("recomendacion",recomendacion);
+    	
+    	UsuarioUtil.INSTANCE.asignarRol(PortalUtil.getUser(actionRequest).getCompanyId(),PortalUtil.getUser(actionRequest).getUserId(),"UsuarioGrupo");
     	
     	GrupoInvestigacionFacade facade = new GrupoInvestigacionFacade();
 		String tiposProductos=facade.consultarTiposProductosInvestigacion();
@@ -69,7 +67,7 @@ private static Log _log = LogFactoryUtil.getLog(RecomendacionPortlet.class);
 					"/html/recomendacion/detalle_recomendacion.jsp");
 		
 		} catch (PortalException | SystemException e) {
-			// TODO Auto-generated catch block
+			LOG.error("Error solicitando recomendacion");
 			e.printStackTrace();
 		}
 	}
@@ -77,14 +75,14 @@ private static Log _log = LogFactoryUtil.getLog(RecomendacionPortlet.class);
 	@ProcessAction(name = "guardarMeta")
 	public void guardarMeta(ActionRequest actionRequest,
 			ActionResponse actionResponse) throws IOException, PortletException {
-		System.out.println("processAction "+ParamUtil.get(actionRequest,"meta", ""));
+		LOG.info("processAction guardarMeta");
 		User user = null;
 		try {
 			user = PortalUtil.getUser(actionRequest);
 			user.getExpandoBridge().setAttribute("Meta",ParamUtil.get(actionRequest,"meta", ""));
 			actionResponse.sendRedirect("/group/user/inicio");
 		} catch (PortalException | SystemException e) {
-			// TODO Auto-generated catch block
+			LOG.error("Error poniendo meta al grupo en recomendacion.");
 			e.printStackTrace();
 		}
 	}
@@ -95,7 +93,7 @@ private static Log _log = LogFactoryUtil.getLog(RecomendacionPortlet.class);
 		HttpServletRequest request = PortalUtil
 				.getHttpServletRequest(renderRequest);
 		String vista = (String) request.getAttribute("view");
-		_log.info("vista:"+ vista);
+		LOG.info("vista:"+ vista);
 		if (vista != null) {
 			include(vista, renderRequest, renderResponse);
 		} else {
@@ -106,11 +104,17 @@ private static Log _log = LogFactoryUtil.getLog(RecomendacionPortlet.class);
 				PortletSession portletSession = renderRequest.getPortletSession();
 				ClasificacionGrupo clasificacionGrupo=(ClasificacionGrupo) portletSession.getAttribute("clasificacionGrupoInvestigacion",PortletSession.APPLICATION_SCOPE);
 				if(recomendacion.equals("")){
-					_log.info("including default "+viewTemplate);
-					_log.info(clasificacionGrupo.getClasificacionGrupo()+" "+(String) PortalUtil.getUser(renderRequest).getExpandoBridge().getAttribute("clasificacionObjetivo"));
+					LOG.info("including default "+viewTemplate);
+					LOG.info(clasificacionGrupo.getClasificacionGrupo()+" "+(String) PortalUtil.getUser(renderRequest).getExpandoBridge().getAttribute("clasificacionObjetivo"));
 					if(clasificacionGrupo.getClasificacionGrupo().equals((String) PortalUtil.getUser(renderRequest).getExpandoBridge().getAttribute("clasificacionObjetivo"))){
-						_log.info("enviando mensaje");
+						LOG.info("Grupo mantiene clasificacion, enviando mensaje");
+						UsuarioUtil.INSTANCE.asignarRol(PortalUtil.getUser(renderRequest).getCompanyId(),PortalUtil.getUser(renderRequest).getUserId(),"UsuarioGrupo");
 						renderRequest.setAttribute("mensajeRecomendacion", true);
+					}
+					if(clasificacionGrupo.getClasificacionGrupo().equals("Reconocido")){
+						LOG.info("Grupo clasificado reconocido, enviando mensaje");
+						UsuarioUtil.INSTANCE.asignarRol(PortalUtil.getUser(renderRequest).getCompanyId(),PortalUtil.getUser(renderRequest).getUserId(),"UsuarioGrupo");
+						renderRequest.setAttribute("mensajeRecomendacionReconocido", true);
 					}
 					include(viewTemplate, renderRequest, renderResponse);
 				}else{
@@ -134,7 +138,7 @@ private static Log _log = LogFactoryUtil.getLog(RecomendacionPortlet.class);
 				.getRequestDispatcher(path);
 
 		if (portletRequestDispatcher == null) {
-			_log.error(path + " is not a valid include");
+			LOG.error(path + " is not a valid include");
 		} else {
 			portletRequestDispatcher.include(renderRequest, renderResponse);
 		}
